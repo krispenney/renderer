@@ -21,13 +21,39 @@ func fitToRange(v float64, min float64, max float64, span float64) float64 {
 	return (((v - min) / (max - min)) * span) + min
 }
 
-func main() {
+func render(rays *[WIDTH * HEIGHT]Ray, min_x, max_x, min_y, max_y float64) {
 	out, err := os.Create("./output.jpg")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
+	img := image.NewRGBA(image.Rect(0, 0, WIDTH, HEIGHT))
+
+	for i, ray := range *rays {
+		x := i % HEIGHT
+		y := int(math.Floor(float64(i) / HEIGHT))
+		direction := ray.direction
+
+		red := fitToRange(direction.x, min_x, max_x, WIDTH)
+		green := fitToRange(direction.y, min_y, max_y, HEIGHT)
+
+		img.Set(x, y, color.RGBA{uint8(red), uint8(green), 100, 255})
+	}
+
+	var opt jpeg.Options
+	opt.Quality = 100
+
+	err = jpeg.Encode(out, img, &opt)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Generated image to output.jpg")
+}
+
+func main() {
 	x1 := Vector{1, 0.75, 0}
 	x2 := Vector{-1, 0.75, 0}
 	x3 := Vector{1, -0.75, 0}
@@ -36,8 +62,6 @@ func main() {
 	camera := Vector{0, 0, -1}
 
 	rays := [WIDTH * HEIGHT]Ray{}
-
-	img := image.NewRGBA(image.Rect(0, 0, WIDTH, HEIGHT))
 
 	var min_x, max_x float64 = math.MaxFloat64, math.SmallestNonzeroFloat64
 	var min_y, max_y float64 = math.MaxFloat64, math.SmallestNonzeroFloat64
@@ -79,25 +103,5 @@ func main() {
 		}
 	}
 
-	for i, ray := range rays {
-		x := i % HEIGHT
-		y := int(math.Floor(float64(i) / HEIGHT))
-		direction := ray.direction
-
-		red := fitToRange(direction.x, min_x, max_x, WIDTH)
-		green := fitToRange(direction.y, min_y, max_y, HEIGHT)
-
-		img.Set(x, y, color.RGBA{uint8(red), uint8(green), 100, 255})
-	}
-
-	var opt jpeg.Options
-	opt.Quality = 100
-
-	err = jpeg.Encode(out, img, &opt)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	fmt.Println("Generated image to output.jpg")
+  render(&rays, min_x, max_x, min_y, max_y)
 }
