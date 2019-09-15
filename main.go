@@ -16,6 +16,11 @@ type Ray struct {
 	point, direction Vector
 }
 
+// https://stats.stackexchange.com/questions/281162/scale-a-number-between-a-range
+func fitToRange(v float64, min float64, max float64, span float64) float64 {
+	return (((v - min) / (max - min)) * span) + min
+}
+
 func main() {
 	out, err := os.Create("./output.jpg")
 	if err != nil {
@@ -77,16 +82,16 @@ func main() {
 	for i, ray := range rays {
 		x := i % HEIGHT
 		y := int(math.Floor(float64(i) / HEIGHT))
-    direction := ray.direction
+		direction := ray.direction
 
-    red := ((direction.x - min_x) / (max_x - min_x)) * WIDTH + min_x
-    green := ((direction.y - min_y) / (max_y - min_y)) * HEIGHT + min_y
+		red := fitToRange(direction.x, min_x, max_x, WIDTH)
+		green := fitToRange(direction.y, min_y, max_y, HEIGHT)
 
 		img.Set(x, y, color.RGBA{uint8(red), uint8(green), 100, 255})
 	}
 
 	var opt jpeg.Options
-  opt.Quality = 100
+	opt.Quality = 100
 
 	err = jpeg.Encode(out, img, &opt)
 	if err != nil {
